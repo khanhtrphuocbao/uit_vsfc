@@ -1,0 +1,372 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "status",
+    "dataset",
+    "source_content_sha256",
+    "split_policy",
+    "test_split",
+    "configurations",
+    "parameters",
+    "metrics",
+    "paired_bootstrap",
+    "primary_comparison",
+    "secondary_comparison",
+    "low_data_comparison",
+    "rq1_test_comparisons",
+    "confirmation_scope",
+    "rules"
+  ],
+  "properties": {
+    "status": {
+      "const": "AWAITING_USER_APPROVAL_NOT_EXECUTED"
+    },
+    "dataset": {
+      "const": "uitnlp/vietnamese_students_feedback"
+    },
+    "source_content_sha256": {
+      "type": "object",
+      "required": [
+        "train",
+        "validation",
+        "test"
+      ],
+      "properties": {
+        "train": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "validation": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "test": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "test_split": {
+      "const": {
+        "name": "test",
+        "n_rows": 3166
+      }
+    },
+    "configurations": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "train_fraction",
+          "n_train",
+          "train_indices_sha256",
+          "seed",
+          "feature",
+          "class_weight"
+        ],
+        "properties": {
+          "id": {
+            "enum": [
+              "A1",
+              "A2",
+              "B1",
+              "B2",
+              "C1",
+              "C2"
+            ]
+          },
+          "train_fraction": {
+            "enum": [
+              0.1,
+              1.0
+            ]
+          },
+          "n_train": {
+            "enum": [
+              1142,
+              11426
+            ]
+          },
+          "train_indices_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "seed": {
+            "const": 42
+          },
+          "feature": {
+            "enum": [
+              "word",
+              "char"
+            ]
+          },
+          "class_weight": {
+            "enum": [
+              "none",
+              "balanced"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "parameters": {
+      "type": "object",
+      "required": [
+        "word_vectorizer",
+        "character_override",
+        "classifier",
+        "model_variants"
+      ],
+      "properties": {
+        "word_vectorizer": {
+          "type": "object",
+          "required": [
+            "analyzer",
+            "ngram_range",
+            "token_pattern"
+          ],
+          "properties": {
+            "analyzer": {
+              "const": "word"
+            },
+            "ngram_range": {
+              "const": [
+                1,
+                2
+              ]
+            },
+            "token_pattern": {
+              "const": "(?u)\\b\\w+\\b"
+            }
+          }
+        },
+        "character_override": {
+          "const": {
+            "analyzer": "char",
+            "ngram_range": [
+              3,
+              5
+            ],
+            "token_pattern": null
+          }
+        },
+        "classifier": {
+          "type": "object",
+          "required": [
+            "C",
+            "max_iter",
+            "random_state"
+          ],
+          "properties": {
+            "C": {
+              "const": 1.0
+            },
+            "max_iter": {
+              "const": 800
+            },
+            "random_state": {
+              "const": 42
+            }
+          },
+          "not": {
+            "required": [
+              "class_weight"
+            ]
+          }
+        },
+        "model_variants": {
+          "const": {
+            "none": {
+              "class_weight": null
+            },
+            "balanced": {
+              "class_weight": "balanced"
+            }
+          }
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "required": [
+        "primary",
+        "secondary"
+      ],
+      "properties": {
+        "primary": {
+          "const": "macro_f1"
+        }
+      }
+    },
+    "paired_bootstrap": {
+      "type": "object",
+      "required": [
+        "status",
+        "unit",
+        "samples",
+        "seed",
+        "interval",
+        "statistic",
+        "zero_division"
+      ],
+      "properties": {
+        "status": {
+          "const": "proposed_only"
+        },
+        "unit": {
+          "const": "test row"
+        },
+        "samples": {
+          "const": 10000
+        },
+        "seed": {
+          "const": 2026
+        },
+        "interval": {
+          "const": "95% percentile"
+        }
+      }
+    },
+    "primary_comparison": {
+      "type": "object",
+      "required": [
+        "role",
+        "configurations",
+        "difference"
+      ],
+      "properties": {
+        "role": {
+          "const": "primary"
+        },
+        "configurations": {
+          "const": [
+            "A1",
+            "A2"
+          ]
+        },
+        "difference": {
+          "const": "A2 minus A1"
+        }
+      }
+    },
+    "secondary_comparison": {
+      "type": "object",
+      "required": [
+        "role",
+        "configurations"
+      ],
+      "properties": {
+        "role": {
+          "const": "exploratory secondary"
+        },
+        "configurations": {
+          "const": [
+            "B1",
+            "B2"
+          ]
+        }
+      }
+    },
+    "low_data_comparison": {
+      "type": "object",
+      "required": [
+        "role",
+        "train_fraction",
+        "n_train",
+        "seed",
+        "train_indices_sha256",
+        "feature",
+        "class_weights",
+        "configurations"
+      ],
+      "properties": {
+        "role": {
+          "const": "secondary"
+        },
+        "train_fraction": {
+          "const": 0.1
+        },
+        "n_train": {
+          "const": 1142
+        },
+        "seed": {
+          "const": 42
+        },
+        "train_indices_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "feature": {
+          "const": "word"
+        },
+        "class_weights": {
+          "const": [
+            "none",
+            "balanced"
+          ]
+        },
+        "configurations": {
+          "const": [
+            "C1",
+            "C2"
+          ]
+        }
+      }
+    },
+    "rq1_test_comparisons": {
+      "type": "object",
+      "required": [
+        "role",
+        "feature",
+        "fractions",
+        "class_weights",
+        "seed",
+        "comparisons"
+      ],
+      "properties": {
+        "role": {
+          "const": "secondary"
+        },
+        "feature": {
+          "const": "word"
+        },
+        "fractions": {
+          "const": [
+            0.1,
+            1.0
+          ]
+        },
+        "class_weights": {
+          "const": [
+            "none",
+            "balanced"
+          ]
+        },
+        "seed": {
+          "const": 42
+        }
+      }
+    },
+    "confirmation_scope": {
+      "type": "object",
+      "required": [
+        "RQ1",
+        "RQ2",
+        "representation_check"
+      ]
+    },
+    "rules": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

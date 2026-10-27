@@ -1,0 +1,167 @@
+[
+  {
+    "seed": 42,
+    "train_fraction": 0.05,
+    "n_train": 571,
+    "class_counts": {
+      "negative": 266,
+      "neutral": 23,
+      "positive": 282
+    },
+    "row_indices_sha256": "193136167762a4511195b9ca6eccf55f4e7b66d5d701668b17b160515d994fe4"
+  },
+  {
+    "seed": 42,
+    "train_fraction": 0.1,
+    "n_train": 1142,
+    "class_counts": {
+      "negative": 532,
+      "neutral": 46,
+      "positive": 564
+    },
+    "row_indices_sha256": "4abf51afd48f3af26b29fff46db41406a7050d2f4684a6c01538df6c8b5e4a29"
+  },
+  {
+    "seed": 42,
+    "train_fraction": 0.25,
+    "n_train": 2856,
+    "class_counts": {
+      "negative": 1331,
+      "neutral": 114,
+      "positive": 1411
+    },
+    "row_indices_sha256": "cb938de3458a586f6d4d01b9ca13cccf3eb4fa8287e2ebfaa3da2e67607c9a4a"
+  },
+  {
+    "seed": 42,
+    "train_fraction": 0.5,
+    "n_train": 5713,
+    "class_counts": {
+      "negative": 2662,
+      "neutral": 229,
+      "positive": 2822
+    },
+    "row_indices_sha256": "f922cccbc93b5e583c94b539e909a5e99fdf8ee062828b5af754965fcef92592"
+  },
+  {
+    "seed": 42,
+    "train_fraction": 1.0,
+    "n_train": 11426,
+    "class_counts": {
+      "negative": 5325,
+      "neutral": 458,
+      "positive": 5643
+    },
+    "row_indices_sha256": "be71c66ea95e9a51708713451814b951becc4b7d152ad862d07f8b3ba20c878b"
+  },
+  {
+    "seed": 52,
+    "train_fraction": 0.05,
+    "n_train": 571,
+    "class_counts": {
+      "negative": 266,
+      "neutral": 23,
+      "positive": 282
+    },
+    "row_indices_sha256": "7f51143f778d8596e649808eddd829676eb552d1dac7663f496026c39da5fa99"
+  },
+  {
+    "seed": 52,
+    "train_fraction": 0.1,
+    "n_train": 1142,
+    "class_counts": {
+      "negative": 532,
+      "neutral": 46,
+      "positive": 564
+    },
+    "row_indices_sha256": "7683b2607362b9ea27ba13640e9a48c4498a021ca381defb01ba0240f342aab8"
+  },
+  {
+    "seed": 52,
+    "train_fraction": 0.25,
+    "n_train": 2856,
+    "class_counts": {
+      "negative": 1331,
+      "neutral": 114,
+      "positive": 1411
+    },
+    "row_indices_sha256": "0dc08ebbaf2823dc9c15d180981b922dcc2b4b6801d93ded74ec344c8fae6372"
+  },
+  {
+    "seed": 52,
+    "train_fraction": 0.5,
+    "n_train": 5713,
+    "class_counts": {
+      "negative": 2663,
+      "neutral": 229,
+      "positive": 2821
+    },
+    "row_indices_sha256": "715b4879ea93531e4a33a9ad50c479cc48567e84c7b51ef02cef6ca657e6d8d5"
+  },
+  {
+    "seed": 52,
+    "train_fraction": 1.0,
+    "n_train": 11426,
+    "class_counts": {
+      "negative": 5325,
+      "neutral": 458,
+      "positive": 5643
+    },
+    "row_indices_sha256": "be71c66ea95e9a51708713451814b951becc4b7d152ad862d07f8b3ba20c878b"
+  },
+  {
+    "seed": 62,
+    "train_fraction": 0.05,
+    "n_train": 571,
+    "class_counts": {
+      "negative": 266,
+      "neutral": 23,
+      "positive": 282
+    },
+    "row_indices_sha256": "c08c73951f81e9987f4c897f7f5684b12413514b6935b9c3a07c9998c6c98d91"
+  },
+  {
+    "seed": 62,
+    "train_fraction": 0.1,
+    "n_train": 1142,
+    "class_counts": {
+      "negative": 532,
+      "neutral": 46,
+      "positive": 564
+    },
+    "row_indices_sha256": "c3058b6069d415ce6b80f0e09627a6c9a7981d00d795974d8880b608f7c63278"
+  },
+  {
+    "seed": 62,
+    "train_fraction": 0.25,
+    "n_train": 2856,
+    "class_counts": {
+      "negative": 1331,
+      "neutral": 114,
+      "positive": 1411
+    },
+    "row_indices_sha256": "626728f75048c9e5bfa07a679523f11598de5d6d5d24a131f22add4e22433c25"
+  },
+  {
+    "seed": 62,
+    "train_fraction": 0.5,
+    "n_train": 5713,
+    "class_counts": {
+      "negative": 2662,
+      "neutral": 229,
+      "positive": 2822
+    },
+    "row_indices_sha256": "38193f970b43419468f3c5d9edc27dc25bd7a260722ac2b1815189312a2527e1"
+  },
+  {
+    "seed": 62,
+    "train_fraction": 1.0,
+    "n_train": 11426,
+    "class_counts": {
+      "negative": 5325,
+      "neutral": 458,
+      "positive": 5643
+    },
+    "row_indices_sha256": "be71c66ea95e9a51708713451814b951becc4b7d152ad862d07f8b3ba20c878b"
+  }
+]

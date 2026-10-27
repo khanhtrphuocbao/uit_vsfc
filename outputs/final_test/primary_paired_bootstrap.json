@@ -1,0 +1,10 @@
+{
+  "comparison": "A2 minus A1",
+  "metric": "macro_f1",
+  "samples": 10000,
+  "seed": 2026,
+  "interval": "95% percentile",
+  "point_estimate": 0.07602694834450141,
+  "lower": 0.04779177126143886,
+  "upper": 0.1032757504538019
+}

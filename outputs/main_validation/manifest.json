@@ -1,0 +1,121 @@
+{
+  "source": {
+    "dataset_id": "uitnlp/vietnamese_students_feedback",
+    "loading_method": "load_dataset_main",
+    "revision": "main"
+  },
+  "versions": {
+    "python": "3.12.9",
+    "numpy": "2.5.4",
+    "pandas": "3.1.0",
+    "sklearn": "1.9.1"
+  },
+  "protocol": {
+    "task": "sentiment (3-way); topic is audit-only",
+    "text_field": "sentence (unchanged)",
+    "sentiment_id_mapping": {
+      "0": "negative",
+      "1": "neutral",
+      "2": "positive"
+    },
+    "topic_id_mapping": {
+      "0": "lecturer",
+      "1": "training_program",
+      "2": "facility",
+      "3": "others"
+    },
+    "vectorizer": "word TF-IDF, token_pattern=(?u)\\b\\w+\\b, 1-2 grams",
+    "model": "LogisticRegression(C=1.0, max_iter=800)",
+    "comparison": "class_weight=None vs balanced",
+    "fractions": [
+      0.05,
+      0.1,
+      0.25,
+      0.5,
+      1.0
+    ],
+    "seeds": [
+      42,
+      52,
+      62
+    ],
+    "split_policy": "published splits unchanged; no silent de-duplication",
+    "test_policy": "default: validation only; --include-test: both weights at min/max fractions"
+  },
+  "audit": {
+    "dataset_id": "uitnlp/vietnamese_students_feedback",
+    "splits": {
+      "train": {
+        "rows": 11426,
+        "matches_published_size": true,
+        "expected_published_rows": 11426,
+        "sentiment_counts": {
+          "negative": 5325,
+          "neutral": 458,
+          "positive": 5643
+        },
+        "topic_counts": {
+          "lecturer": 8166,
+          "training_program": 2201,
+          "facility": 497,
+          "others": 562
+        },
+        "duplicate_text_rows": 1,
+        "texts_with_conflicting_sentiment": 1,
+        "ordered_content_sha256": "c64d1c11a1baf3c2231cac6b42511939f00349e7a3276412109316b373a9b8f2",
+        "huggingface_fingerprint": "126eae298f0eb943"
+      },
+      "validation": {
+        "rows": 1583,
+        "matches_published_size": true,
+        "expected_published_rows": 1583,
+        "sentiment_counts": {
+          "negative": 705,
+          "neutral": 73,
+          "positive": 805
+        },
+        "topic_counts": {
+          "lecturer": 1151,
+          "training_program": 267,
+          "facility": 70,
+          "others": 95
+        },
+        "duplicate_text_rows": 0,
+        "texts_with_conflicting_sentiment": 0,
+        "ordered_content_sha256": "b0e7ff0e1da48b3c1f4f4923a0d39e5136bb3def7863b22cd662e35bebcc0ae7",
+        "huggingface_fingerprint": "422c5b0a41e3786e"
+      },
+      "test": {
+        "rows": 3166,
+        "matches_published_size": true,
+        "expected_published_rows": 3166,
+        "sentiment_counts": {
+          "negative": 1409,
+          "neutral": 167,
+          "positive": 1590
+        },
+        "topic_counts": {
+          "lecturer": 2290,
+          "training_program": 572,
+          "facility": 145,
+          "others": 159
+        },
+        "duplicate_text_rows": 0,
+        "texts_with_conflicting_sentiment": 0,
+        "ordered_content_sha256": "8aaa45b773577508ffa413555423a876ee84765fcafb6c2e7245e56bd64b6f58",
+        "huggingface_fingerprint": "eb337b9505e9ac94"
+      }
+    },
+    "cross_split_overlap": {
+      "train_vs_validation": 0,
+      "train_vs_test": 0,
+      "validation_vs_test": 0
+    }
+  },
+  "status": "COMPLETED",
+  "runs": {
+    "validation_model_fits": 30,
+    "test_evaluations": 0,
+    "test_evaluated": false
+  }
+}
