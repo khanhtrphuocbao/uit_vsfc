@@ -1,3 +1,0 @@
-train_fraction,class_weight,accuracy_mean,accuracy_std,macro_f1_mean,macro_f1_std,weighted_f1_mean,weighted_f1_std,neutral_precision_mean,neutral_precision_std,neutral_recall_mean,neutral_recall_std,neutral_f1_mean,neutral_f1_std,negative_f1_mean,negative_f1_std,positive_f1_mean,positive_f1_std
-0.05,balanced,0.8376500315855969,0.0,0.5885361630415697,0.0,0.8221784142277022,0.0,0.2,0.0,0.0273972602739726,0.0,0.04819277108433735,0.0,0.8452929558920342,0.0,0.8721227621483376,0.0
-0.05,none,0.8464939987365762,0.0,0.5774195600708548,0.0,0.8268520153157999,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.8556149732620321,0.0,0.8766437069505323,0.0
