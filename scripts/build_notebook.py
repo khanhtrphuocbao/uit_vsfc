@@ -30,9 +30,9 @@ def make_notebook():
 
 **Tác giả**: Research Engineer in Vietnamese NLP, Imbalanced Learning & Deep Learning  
 **Đơn vị**: Đại học Công nghệ Thông tin (UIT) — ĐHQG-HCM  
-**Repository**: `uit_vsfc`  
+**Môi trường tính toán**: Kaggle GPU Compute (Tesla T4 / P100 16GB VRAM) kết nối qua VS Code  
 **Dataset**: UIT-VSFC (Vietnamese Students' Feedback Corpus, Nguyen et al., KSE 2018)  
-**Mục tiêu**: Nghiên cứu, thiết kế, triển khai và kiểm chứng thực nghiệm các phương pháp giải quyết bài toán mất cân bằng lớp cực đoan trên lớp **Neutral** (~4,01% tập train) của corpus UIT-VSFC.
+**Mục tiêu**: Huấn luyện thực tế (Training), Đánh giá (Evaluation) và Đối chứng thực nghiệm (Comparison) toàn diện các phương pháp phân loại cảm xúc trên lớp thiểu số **Neutral** (~4,01% tập train).
 
 ---
 
@@ -50,20 +50,20 @@ def make_notebook():
 
 ---
 ### 📑 Mục Lục Notebook
-1. [Khởi tạo Môi trường & Chế độ Fast Demo](#sec-1)
-2. [Tải & Kiểm toán Dữ liệu UIT-VSFC](#sec-2)
-3. [Tách từ Tiếng Việt & Phân tích Ngôn ngữ học](#sec-3)
+1. [Khởi tạo & Tự động kết nối Kaggle Compute](#sec-1)
+2. [Tải & Kiểm toán Phân phối Dữ liệu UIT-VSFC](#sec-2)
+3. [Tách từ Tiếng Việt PyVi & Khởi tạo Tokenizer PhoBERT](#sec-3)
 4. [Baseline Tuyến tính B0: TF-IDF + Logistic Regression](#sec-4)
-5. [Tích hợp Mã nguồn Mô-đun hóa Core từ `src/`](#sec-5)
-6. [Kiểm tra Tính Toàn Vẹn Số Học (Numerical Stability)](#sec-6)
-7. [Bảng Tổng Hợp Kết Quả Thực Nghiệm Toàn Diện (B0 - B11)](#sec-7)
-8. [Trực quan hóa Ma trận Nhầm lẫn (Confusion Matrices)](#sec-8)
-9. [Kiểm định Thống kê Paired Bootstrap (95% CI & p-value)](#sec-9)
-10. [Phân Tích Lỗi Định Tính Thực Tế (Qualitative Error Analysis)](#sec-10)
-11. [Kết Luận Khoa Học & Đóng Góp của Đề Tài](#sec-11)
+5. [Tích hợp Mô-đun Cốt lõi & Kiểm thử Số học](#sec-5)
+6. [Kaggle Training Pipeline: Huấn Luyện Các Mô Hình Deep Learning](#sec-6)
+7. [Dung Hợp Đa Trường Phái SOTA: Multi-Paradigm Fused Ensemble (B11)](#sec-7)
+8. [Bảng Tổng Hợp So Sánh Toàn Diện (B0 - B11)](#sec-8)
+9. [Trực quan hóa Ma trận Nhầm lẫn & Learning Curves](#sec-9)
+10. [Kiểm định Thống kê Paired Bootstrap (95% CI & p-value)](#sec-10)
+11. [Phân Tích Lỗi Định Tính & Kết Luận Khoa Học](#sec-11)
 12. [Inference Playground: Dự đoán Cảm xúc Trực tiếp](#sec-12)""")
 
-    # CELL 2: Setup Environment, Kaggle Compute Detection & Fast Mode
+    # CELL 2: Setup Environment, Kaggle Compute Detection & Seed
     add_code(r"""# <a id="sec-1"></a>
 # 1. Cấu hình Môi trường, Tự Động Nhận Diện Kaggle Compute & Seed
 import os
@@ -133,11 +133,17 @@ print(f"Thiết bị tính toán: {device}")
 if torch.cuda.is_available():
     print(f"GPU: {torch.cuda.get_device_name(0)} (VRAM: {torch.cuda.get_device_properties(0).total_memory / (1024**2):.0f} MB)")
 
-# CHẾ ĐỘ THỰC THI (EXECUTION MODE):
-# FAST_MODE = True: Chạy demo kiểm thử logic & trực quan hóa artifacts trong vài giây.
-# FAST_MODE = False: Sẵn sàng huấn luyện mô hình sâu bằng GPU của Kaggle.
-FAST_MODE = True
-print(f"FAST_MODE: {FAST_MODE}")""")
+# CẤU HÌNH HUẤN LUYỆN TRÊN KAGGLE (KAGGLE TRAINING CONFIG):
+# - TRAIN_LIVE: Nếu True, notebook sẽ chạy huấn luyện thật bằng GPU Kaggle cho các mô hình được chọn.
+# - RETRAIN_EXISTING: Nếu False, bỏ qua các mô hình đã có kết quả trong outputs/ để tiết kiệm thời gian.
+#                     Nếu True, ép buộc huấn luyện lại từ đầu.
+TRAIN_LIVE = True if torch.cuda.is_available() else False
+RETRAIN_EXISTING = False
+EPOCHS = 3
+BATCH_SIZE = 32
+LR = 2e-5
+
+print(f"TRAIN_LIVE: {TRAIN_LIVE} | RETRAIN_EXISTING: {RETRAIN_EXISTING} | EPOCHS: {EPOCHS} | BATCH_SIZE: {BATCH_SIZE}")""")
 
     # CELL 3: Markdown on Environment
     add_md(r"""> [!NOTE]
@@ -216,10 +222,10 @@ print("BPE Tokens:     ", tokens[:10], "... (tổng cộng", len(tokens), "token
 
     # CELL 7: Linear Baseline B0
     add_code(r"""# <a id="sec-4"></a>
-# 4. Baseline Tuyến tính B0: TF-IDF + Logistic Regression
+# 4. Baseline Tuyến tính B0: TF-IDF + Logistic Regression (Chạy trực tiếp)
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import classification_report, f1_score
+from sklearn.metrics import classification_report, f1_score, confusion_matrix
 
 # Tiền xử lý nhanh tập train và test
 train_texts = [ViTokenizer.tokenize(t) for t in train_df["Sentence"]]
@@ -243,7 +249,6 @@ clf_bal.fit(X_train, train_labels)
 pred_bal = clf_bal.predict(X_test)
 f1_bal = f1_score(test_labels, pred_bal, average="macro")
 
-from sklearn.metrics import confusion_matrix
 cm_none = confusion_matrix(test_labels, pred_none)
 cm_bal = confusion_matrix(test_labels, pred_bal)
 
@@ -278,6 +283,7 @@ display(b0_summary)""")
     # CELL 9: Modular core imports from src
     add_code(r"""# <a id="sec-5"></a>
 # 5. Tích hợp trực tiếp các mô-đun cốt lõi từ src/
+from src.dataset import UITVSFCDataset
 from src.losses import (
     NeutralBoundaryLoss,
     SupervisedContrastiveLoss,
@@ -286,40 +292,21 @@ from src.losses import (
 )
 from src.sampler import ClassAwareBatchSampler
 from src.model import PhoBertSentimentClassifier
+from src.trainer import run_training_experiment, evaluate_model
 from src.calibration import search_optimal_neutral_bias, apply_neutral_bias
 from src.metrics import compute_all_metrics, compute_paired_bootstrap_ci
 
 print("✅ Đã import thành công toàn bộ module từ package src:")
+print("   - src.dataset:     UITVSFCDataset")
 print("   - src.losses:      NeutralBoundaryLoss, SupervisedContrastiveLoss, BalancedSoftmaxLoss, compute_class_weights")
 print("   - src.sampler:     ClassAwareBatchSampler")
 print("   - src.model:       PhoBertSentimentClassifier")
+print("   - src.trainer:     run_training_experiment, evaluate_model")
 print("   - src.calibration: search_optimal_neutral_bias, apply_neutral_bias")
 print("   - src.metrics:     compute_all_metrics, compute_paired_bootstrap_ci")""")
 
-    # CELL 10: Mathematical Formulation of Paradigms
-    add_md(r"""### Cơ Sở Toán Học của 4 Trường Phái Được Đối Chứng
-
-1. **Trường phái 1 — Cost-Sensitive Learning (Mô hình B2)**:
-   Gán trọng số nghịch đảo tần suất cho hàm mất mát Cross-Entropy:
-   $$\mathcal{L}_{\text{WCE}} = - \sum_{c=0}^2 w_c \cdot y_c \log \hat{y}_c, \quad w_c = \frac{N}{C \cdot N_c}$$
-
-2. **Trường phái 2 — Neutral-Boundary-Aware Contrastive Loss (Mô hình B6, B7)**:
-   Buộc biểu diễn của lớp Neutral phải duy trì khoảng cách an toàn $m$ so với các hard negatives phân cực gần nhất:
-   $$\mathcal{L}_{\text{NB}} = \frac{1}{|N|} \sum_{i \in N} \max\left(0, m - s(h_i, h_p) + s(h_i, h_q)\right)$$
-   trong đó $h$ là normalized embedding, $p$ là hardest positive neutral, và $q$ là hardest negative (thuộc lớp 0 hoặc 2).
-
-3. **Trường phái 3 — Representation Metric Learning (Mô hình B5, B9)**:
-   Sử dụng Supervised Contrastive Loss (Khosla et al., 2020) để gom cụm các mẫu cùng lớp trên siêu cầu đơn vị:
-   $$\mathcal{L}_{\text{SupCon}} = \sum_{i} \frac{-1}{|P(i)|} \sum_{p \in P(i)} \log \frac{\exp(h_i \cdot h_p / \tau)}{\sum_{a \neq i} \exp(h_i \cdot h_a / \tau)}$$
-
-4. **Trường phái 4 — Prior-Adjustment / Balanced Softmax (Mô hình B8)**:
-   Dịch chuyển logit trong quá trình tối ưu hóa theo xác suất tiên nghiệm để triệt tiêu thiên kiến lớp đa số:
-   $$\mathcal{L}_{\text{BS}} = -\log \frac{\exp\left(z_y + \gamma \log n_y\right)}{\sum_c \exp\left(z_c + \gamma \log n_c\right)}$$""")
-
-    # CELL 11: Numerical Stability Test
-    add_code(r"""# <a id="sec-6"></a>
-# 6. Kiểm tra tính toàn vẹn số học & Xử lý Edge Cases của NBAC Loss
-# Mô phỏng batch không có mẫu Neutral hoặc chỉ có 1 mẫu Neutral
+    # CELL 10: Numerical Stability Test
+    add_code(r"""# 5.1. Kiểm tra tính toàn vẹn số học & Xử lý Edge Cases của NBAC Loss
 nbac_loss_fn = NeutralBoundaryLoss(margin=0.2, neutral_label=1)
 
 dummy_embeddings = torch.randn(8, 128, requires_grad=True)
@@ -332,7 +319,7 @@ loss_no_neu = nbac_loss_fn(dummy_embeddings, dummy_labels_no_neu)
 loss_no_neu.backward()
 print("Edge Case 1 (0 Neutral): Loss =", loss_no_neu.item(), "| Gradient status: An toàn, không lỗi!")
 
-# Edge case 2: Chỉ có 1 mẫu Neutral (không tạo được cặp positive)
+# Edge case 2: Chỉ có 1 mẫu Neutral
 dummy_embeddings.grad.zero_()
 loss_one_neu = nbac_loss_fn(dummy_embeddings, dummy_labels_one_neu)
 loss_one_neu.backward()
@@ -344,35 +331,193 @@ loss_normal = nbac_loss_fn(dummy_embeddings, dummy_labels_normal)
 loss_normal.backward()
 print("Normal Case (3 Neutrals): Loss =", round(loss_normal.item(), 4), "| Gradient tính toán đầy đủ!")""")
 
-    # CELL 12: Fast Training Loop Demo
-    add_code(r"""# Minh họa khởi tạo mô hình PhoBertSentimentClassifier và kiểm thử luồng Forward
-# Sử dụng trực tiếp class PhoBertSentimentClassifier từ src/model.py
-model_demo = PhoBertSentimentClassifier(model_name_or_path=model_path, num_classes=3, loss_type="ce")
-model_demo.to(device)
-model_demo.eval()
+    # CELL 11: Kaggle Training Pipeline (Markdown intro)
+    add_md(r"""# <a id="sec-6"></a>
+### 6. Kaggle Training Pipeline: Huấn Luyện Các Mô Hình Deep Learning Trực Tiếp
 
-# Tạo batch dữ liệu mẫu để kiểm tra tính tương thích
-sample_batch_texts = [
-    "Thầy nhiệt_tình nhưng bài_tập quá dài",
-    "Môn học gồm ba tín_chỉ lý_thuyết",
-    "Giảng_viên hướng_dẫn rất tận_tâm"
-]
-sample_inputs = tokenizer(sample_batch_texts, padding=True, truncation=True, max_length=64, return_tensors="pt").to(device)
+Ô code dưới đây cho phép bạn **thực sự chạy huấn luyện trên GPU Kaggle** cho các mô hình đại diện:
+* **B1 (PhoBERT + CE)**: Baseline chuẩn không lấy mẫu.
+* **B2 (PhoBERT + Weighted CE)**: Phạt chi phí theo trọng số nghịch đảo.
+* **B5 (PhoBERT + SupCon)**: Gom cụm biểu diễn siêu cầu bằng Supervised Contrastive Loss.
+* **B6 (NBAC-PhoBERT)**: Đẩy hard negatives phân cực bằng Neutral Boundary Loss ($m=0.2$).
+* **B8 (PhoBERT + Balanced-SupCon)**: Triệt tiêu thiên kiến tiên nghiệm với Smoothed Balanced Softmax ($\gamma=0.5$).
+* **B9 (PhoBERT + Weighted-SupCon)**: Mô hình hỗn hợp kết hợp đồng thời Weighted-CE + SupCon + Sampler.
 
-with torch.no_grad():
-    out = model_demo(sample_inputs["input_ids"], sample_inputs["attention_mask"])
-    logits = out["logits"]
-    features = out["features"]
-    probs = F.softmax(logits, dim=-1)
+> 💡 **Cơ chế thông minh**:
+> - Nếu bạn chọn `RETRAIN_EXISTING = False`, các mô hình đã có kết quả trong thư mục `outputs/` sẽ được nạp tức thì mà không cần train lại.
+> - Nếu bạn muốn huấn luyện lại từ đầu một mô hình bất kỳ bằng GPU Kaggle, chỉ cần đặt `RETRAIN_EXISTING = True` hoặc xóa folder output tương ứng.""")
 
-print("Forward Pass kiểm thử thành công:")
-print(" - Logits shape:   ", logits.shape)
-print(" - Features shape: ", features.shape)
-print(" - Xác suất mẫu 1: ", probs[0].cpu().numpy().round(3))""")
+    # CELL 12: Kaggle Training Execution
+    add_code(r"""# Khởi tạo Dataset chuẩn hóa
+print("Đang tải dữ liệu qua UITVSFCDataset...")
+train_dataset = UITVSFCDataset("data/train.json", tokenizer, max_length=96, split_name="train")
+val_dataset = UITVSFCDataset("data/valid.json", tokenizer, max_length=96, split_name="valid")
+test_dataset = UITVSFCDataset("data/test.json", tokenizer, max_length=96, split_name="test")
 
-    # CELL 13: Full Official Benchmark Loading
+# Bảng cấu hình các thực nghiệm
+CONFIGS_MAP = {
+    "B1_ce": {
+        "name": "B1_ce",
+        "loss_type": "ce",
+        "use_sampler": False,
+        "epochs": EPOCHS,
+        "batch_size": BATCH_SIZE,
+        "lr": LR,
+        "model_path": model_path,
+        "seed": SEED,
+    },
+    "B2_weighted_ce": {
+        "name": "B2_weighted_ce",
+        "loss_type": "weighted_ce",
+        "use_sampler": False,
+        "epochs": EPOCHS,
+        "batch_size": BATCH_SIZE,
+        "lr": LR,
+        "model_path": model_path,
+        "seed": SEED,
+    },
+    "B5_supcon": {
+        "name": "B5_supcon",
+        "loss_type": "supcon",
+        "use_sampler": True,
+        "lambda_contrastive": 0.1,
+        "temperature": 0.1,
+        "epochs": EPOCHS,
+        "batch_size": BATCH_SIZE,
+        "lr": LR,
+        "model_path": model_path,
+        "seed": SEED,
+    },
+    "B6_nbac": {
+        "name": "B6_nbac",
+        "loss_type": "nbac",
+        "use_sampler": True,
+        "lambda_contrastive": 0.1,
+        "margin": 0.2,
+        "epochs": EPOCHS,
+        "batch_size": BATCH_SIZE,
+        "lr": LR,
+        "model_path": model_path,
+        "seed": SEED,
+    },
+    "B8_balanced_supcon": {
+        "name": "B8_balanced_supcon",
+        "loss_type": "balanced_supcon",
+        "use_sampler": True,
+        "gamma": 0.5,
+        "lambda_contrastive": 0.1,
+        "temperature": 0.1,
+        "epochs": EPOCHS,
+        "batch_size": BATCH_SIZE,
+        "lr": LR,
+        "model_path": model_path,
+        "seed": SEED,
+    },
+    "B9_weighted_supcon": {
+        "name": "B9_weighted_supcon",
+        "loss_type": "weighted_supcon",
+        "use_sampler": True,
+        "lambda_contrastive": 0.1,
+        "temperature": 0.1,
+        "epochs": EPOCHS,
+        "batch_size": BATCH_SIZE,
+        "lr": LR,
+        "model_path": model_path,
+        "seed": SEED,
+    },
+}
+
+# Chọn danh sách mô hình cần huấn luyện:
+MODELS_TO_TRAIN = ["B1_ce", "B2_weighted_ce", "B5_supcon", "B6_nbac", "B8_balanced_supcon", "B9_weighted_supcon"]
+
+for exp_id in MODELS_TO_TRAIN:
+    cfg = CONFIGS_MAP[exp_id]
+    result_path = f"outputs/{exp_id}/result_seed_{SEED}.json"
+    
+    if TRAIN_LIVE and (RETRAIN_EXISTING or not os.path.exists(result_path)):
+        print(f"\n🚀 [Kaggle Compute] Đang huấn luyện mô hình: {exp_id} ({cfg['epochs']} epochs trên GPU)...")
+        res = run_training_experiment(
+            config=cfg,
+            train_dataset=train_dataset,
+            val_dataset=val_dataset,
+            test_dataset=test_dataset,
+            tokenizer=tokenizer,
+            device=device,
+            output_dir="outputs"
+        )
+        print(f"✅ Hoàn tất {exp_id} -> Test Macro-F1: {res['test_metrics']['macro_f1']:.4f} | Neu-F1: {res['test_metrics']['neutral']['f1']:.4f}")
+    else:
+        print(f"📦 [Sẵn sàng] Mô hình {exp_id} đã có kết quả trong outputs/ (bỏ qua huấn luyện lại để tiết kiệm thời gian).")""")
+
+    # CELL 13: SOTA Fused Ensemble Computation
     add_code(r"""# <a id="sec-7"></a>
-# 7. Tổng hợp và nạp kết quả thực nghiệm chuẩn hóa 3 Epochs từ outputs/
+# 7. Dung Hợp Đa Trường Phái SOTA: Multi-Paradigm Fused Ensemble (B11)
+# Kết hợp xác suất/logits từ 4 trường phái đại diện: B2 + B5 + B8 + B9
+ensemble_members = ["B2_weighted_ce", "B5_supcon", "B8_balanced_supcon", "B9_weighted_supcon"]
+print(f"⚡ Đang dung hợp logits từ các mô hình thành phần: {ensemble_members}...")
+
+test_logits_list = []
+val_logits_list = []
+y_test = None
+y_val = None
+
+for m in ensemble_members:
+    pred_file = f"outputs/{m}/preds_seed_{SEED}.npz"
+    if os.path.exists(pred_file):
+        data = np.load(pred_file)
+        test_logits_list.append(data["test_logits"])
+        val_logits_list.append(data["val_logits"])
+        if y_test is None:
+            y_test = data["test_labels"]
+            y_val = data["val_labels"]
+
+if len(test_logits_list) == len(ensemble_members):
+    # Trung bình cộng logits đa mô hình
+    fused_test_logits = np.mean(test_logits_list, axis=0)
+    fused_val_logits = np.mean(val_logits_list, axis=0)
+    
+    fused_test_preds = np.argmax(fused_test_logits, axis=-1)
+    fused_val_preds = np.argmax(fused_val_logits, axis=-1)
+    
+    test_metrics_b11 = compute_all_metrics(y_test, fused_test_preds)
+    val_metrics_b11 = compute_all_metrics(y_val, fused_val_preds)
+    
+    os.makedirs("outputs/B11_fused_ensemble", exist_ok=True)
+    res_b11 = {
+        "config": {
+            "name": "B11_fused_ensemble",
+            "description": "Multi-Paradigm Logit Fusion Ensemble (B2 + B5 + B8 + B9)",
+            "ensemble_components": ensemble_members,
+            "epochs": EPOCHS,
+            "seed": SEED
+        },
+        "seed": SEED,
+        "best_epoch": EPOCHS,
+        "best_val_metrics": val_metrics_b11,
+        "test_metrics": test_metrics_b11,
+        "training_time_seconds": 0.0,
+        "history": []
+    }
+    with open(f"outputs/B11_fused_ensemble/result_seed_{SEED}.json", "w", encoding="utf-8") as f:
+        json.dump(res_b11, f, indent=2, ensure_ascii=False)
+    np.savez_compressed(
+        f"outputs/B11_fused_ensemble/preds_seed_{SEED}.npz",
+        test_labels=y_test,
+        test_preds=fused_test_preds,
+        test_logits=fused_test_logits,
+        val_labels=y_val,
+        val_logits=fused_val_logits
+    )
+    print(f"🎉 B11 SOTA Fused Ensemble thành công:")
+    print(f"   - Macro-F1:   {test_metrics_b11['macro_f1']:.4f}")
+    print(f"   - Neutral F1: {test_metrics_b11['neutral']['f1']:.4f} (TP = {test_metrics_b11['neutral']['tp']}, FP = {test_metrics_b11['neutral']['fp']})")
+    print(f"   - Accuracy:   {test_metrics_b11['accuracy']:.4f}")
+else:
+    print(f"⚠️ Chưa đủ các file dự đoán của các thành phần ({len(test_logits_list)}/{len(ensemble_members)}).")""")
+
+    # CELL 14: Benchmark Comparison Table
+    add_code(r"""# <a id="sec-8"></a>
+# 8. Bảng Tổng Hợp So Sánh Toàn Diện Các Mô Hình Trên Test Set
 def load_all_official_benchmarks():
     models_config = [
         ("B0 (TF-IDF None)", "outputs/B0_tfidf_lr/results.json", "Baseline (Tuyến tính)", "unweighted"),
@@ -436,25 +581,9 @@ benchmark_df = load_all_official_benchmarks()
 display(benchmark_df.style.highlight_max(subset=["Macro-F1", "Neutral F1", "Accuracy"], color="#d4edda")
                          .highlight_min(subset=["Neu FP", "Neu FN"], color="#d1ecf1"))""")
 
-    # CELL 14: In-depth Analysis
-    add_md(r"""# <a id="sec-8"></a>
-### Phân Tích Thực Nghiệm Chuyên Sâu (Deep Experimental Analysis)
-
-Quan sát từ bảng kết quả chuẩn hóa 3 epochs trên UIT-VSFC Test set:
-1. **PhoBERT-base Tiêu chuẩn (B1)**:
-   - Đạt Macro-F1 = **0.8211**, Neutral F1 = **0.5522**, Accuracy = **0.9384**.
-   - Nhờ học chuyển tiếp từ pre-trained corpus tiếng Việt lớn, mô hình đã dự đoán đúng 74 câu Neutral mà chỉ bị 27 False Positives.
-2. **Neutral Boundary Loss (B6)**:
-   - Macro-F1 đạt **0.8251**, Neutral F1 = **0.5695** (tăng số Neutral đúng từ 74 lên 86 câu).
-   - Tuy nhiên, số False Positives cũng tăng nhẹ từ 27 lên 49 câu. Khi kiểm định thống kê bootstrap, mức cải thiện $\Delta = +0.0040$ chưa đạt ý nghĩa thống kê ($p = 0.337$) do tính nhạy cảm với các mẫu nhiễu ở vùng biên.
-3. **Prior-Adjustment & Unified Contrastive (B8, B9, B10)**:
-   - Balanced-SupCon (B8: Macro-F1 = **0.8341**) và Weighted-SupCon (B9: Macro-F1 = **0.8344**) chứng minh rằng việc kết hợp đồng thời phạt chi phí với gom cụm siêu cầu giúp tăng tính bền vững rõ rệt.
-4. **Đột phá SOTA — Multi-Paradigm Fused Ensemble (B11)**:
-   - Kết hợp xác suất có trọng số của 4 đại diện: Phạt chi phí (B2) + Gom cụm tương phản (B5) + Triệt tiêu tiên nghiệm (B8) + Hỗn hợp (B9).
-   - Thiết lập kỷ lục mới trên UIT-VSFC: **Macro-F1 = 0.8433**, **Neutral F1 = 0.6143** (dự đoán đúng 90 câu Neutral, khống chế FP chỉ còn 36 câu), và **Accuracy = 0.9419**.""")
-
-    # CELL 15: Confusion Matrices Plotting
-    add_code(r"""# 8. Trực quan hóa Ma trận Nhầm lẫn (Confusion Matrices) So Sánh Các Cấu Hình Chủ Chốt
+    # CELL 15: Confusion Matrices & Curves
+    add_code(r"""# <a id="sec-9"></a>
+# 9. Trực quan hóa Ma trận Nhầm lẫn (Confusion Matrices) So Sánh Các Cấu Hình Chủ Chốt
 fig, axes = plt.subplots(1, 4, figsize=(22, 5), dpi=300)
 
 cms = {}
@@ -490,9 +619,9 @@ for ax, (title, cm) in zip(axes, cms.items()):
 plt.tight_layout()
 plt.show()""")
 
-    # CELL 16: Paired Bootstrap Statistical Test
-    add_code(r"""# <a id="sec-9"></a>
-# 9. Kiểm định Thống kê Paired Bootstrap (1.000 Lần Lấy Mẫu Re-sampling)
+    # CELL 16: Paired Bootstrap Test
+    add_code(r"""# <a id="sec-10"></a>
+# 10. Kiểm định Thống kê Paired Bootstrap (1.000 Lần Lấy Mẫu Re-sampling)
 # So sánh tính có ý nghĩa thống kê giữa B11 SOTA và B1 Tiêu chuẩn
 pred_b1_file = "outputs/B1_ce/preds_seed_42.npz"
 pred_b11_file = "outputs/B11_fused_ensemble/preds_seed_42.npz"
@@ -522,8 +651,8 @@ if os.path.exists(pred_b1_file) and os.path.exists(pred_b11_file):
         print(">> KẾT LUẬN: Sự cải thiện chưa đạt ý nghĩa thống kê ở mức alpha=0.05.")""")
 
     # CELL 17: Qualitative Error Analysis
-    add_md(r"""# <a id="sec-10"></a>
-### 10. Phân Tích Lỗi Định Tính Thực Tế (Qualitative Error Analysis)
+    add_md(r"""# <a id="sec-11"></a>
+### 11. Phân Tích Lỗi Định Tính Thực Tế (Qualitative Error Analysis)
 
 Khảo sát các ca nhầm lẫn thực tế của lớp Neutral trên UIT-VSFC Test set:
 
@@ -540,8 +669,7 @@ Khảo sát các ca nhầm lẫn thực tế của lớp Neutral trên UIT-VSFC 
    - Thay vì phụ thuộc vào một ranh giới đơn lẻ, B11 tích hợp xác suất mềm (soft voting) từ 4 mô hình: mô hình gom cụm hình học SupCon giữ khoảng cách cụm, mô hình Weighted phạt mẫu khó, và mô hình Balanced Softmax kiềm chế xác suất lớp đa số.""")
 
     # CELL 18: Final Scientific Conclusions
-    add_md(r"""# <a id="sec-11"></a>
-## 11. Kết Luận Khoa Học & Đóng Góp của Đề Tài
+    add_md(r"""## KẾT LUẬN KHOA HỌC & ĐÓNG GÓP CỦA ĐỀ TÀI
 
 ### 1. Trả Lời Câu Hỏi Nghiên Cứu
 * **Câu hỏi 1: PhoBERT tiêu chuẩn hoạt động ra sao trên lớp Neutral?**
@@ -561,6 +689,10 @@ Khảo sát các ca nhầm lẫn thực tế của lớp Neutral trên UIT-VSFC 
     # CELL 19: Interactive Inference Playground
     add_code(r"""# <a id="sec-12"></a>
 # 12. Inference Playground: Dự Đoán Cảm Xúc Phản Hồi Trực Tiếp
+model_demo = PhoBertSentimentClassifier(model_name_or_path=model_path, num_classes=3, loss_type="ce")
+model_demo.to(device)
+model_demo.eval()
+
 def predict_sentiment_interactive(text):
     # 1. Tách từ tiếng Việt
     seg = ViTokenizer.tokenize(text)
@@ -618,7 +750,7 @@ for s in test_samples:
     with open("UIT_VSFC_Neutral_Classification.ipynb", "w", encoding="utf-8") as f:
         json.dump(nb, f, indent=2, ensure_ascii=False)
 
-    print("✅ Đã tạo thành công UIT_VSFC_Neutral_Classification.ipynb chuẩn mực!")
+    print("✅ Đã tạo thành công UIT_VSFC_Neutral_Classification.ipynb chuẩn mực huấn luyện & đánh giá trên Kaggle!")
 
 
 if __name__ == "__main__":
