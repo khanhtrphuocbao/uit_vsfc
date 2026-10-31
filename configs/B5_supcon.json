@@ -1,0 +1,15 @@
+{
+  "name": "B5_supcon",
+  "description": "PhoBERT-base + Supervised Contrastive Loss (SupCon) + Class-Aware Batch Sampler",
+  "backbone": "vinai/phobert-base",
+  "max_length": 96,
+  "batch_size": 32,
+  "lr": 2e-5,
+  "weight_decay": 0.01,
+  "epochs": 4,
+  "loss_type": "supcon",
+  "use_sampler": true,
+  "lambda_contrastive": 0.1,
+  "temperature": 0.1,
+  "use_val_calibration": false
+}

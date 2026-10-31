@@ -1,0 +1,14 @@
+{
+  "name": "B4_ce_sampler",
+  "description": "PhoBERT-base + standard Cross-Entropy + Class-Aware Batch Sampler (essential control isolating the sampler effect)",
+  "backbone": "vinai/phobert-base",
+  "max_length": 96,
+  "batch_size": 32,
+  "lr": 2e-5,
+  "weight_decay": 0.01,
+  "epochs": 4,
+  "loss_type": "ce",
+  "use_sampler": true,
+  "class_proportions": {"0": 13, "1": 6, "2": 13},
+  "use_val_calibration": false
+}

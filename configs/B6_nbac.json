@@ -1,0 +1,16 @@
+{
+  "name": "B6_nbac",
+  "description": "PhoBERT-base + Neutral-Boundary-Aware Contrastive Loss (NBAC) + Class-Aware Batch Sampler",
+  "backbone": "vinai/phobert-base",
+  "max_length": 96,
+  "batch_size": 32,
+  "lr": 2e-5,
+  "weight_decay": 0.01,
+  "epochs": 4,
+  "loss_type": "nbac",
+  "use_sampler": true,
+  "lambda_contrastive": 0.1,
+  "margin": 0.2,
+  "positive_mode": "hardest",
+  "use_val_calibration": false
+}

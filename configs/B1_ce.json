@@ -1,0 +1,13 @@
+{
+  "name": "B1_ce",
+  "description": "PhoBERT-base + standard Cross-Entropy (random sampler)",
+  "backbone": "vinai/phobert-base",
+  "max_length": 96,
+  "batch_size": 32,
+  "lr": 2e-5,
+  "weight_decay": 0.01,
+  "epochs": 4,
+  "loss_type": "ce",
+  "use_sampler": false,
+  "use_val_calibration": false
+}
