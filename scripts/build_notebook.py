@@ -63,14 +63,15 @@ def make_notebook():
 11. [Kết Luận Khoa Học & Đóng Góp của Đề Tài](#sec-11)
 12. [Inference Playground: Dự đoán Cảm xúc Trực tiếp](#sec-12)""")
 
-    # CELL 2: Setup Environment & Fast Execution Toggle
+    # CELL 2: Setup Environment, Kaggle Compute Detection & Fast Mode
     add_code(r"""# <a id="sec-1"></a>
-# 1. Cài đặt cấu hình môi trường, Seed & Chế độ Thực thi Nhanh (Fast Mode)
+# 1. Cấu hình Môi trường, Tự Động Nhận Diện Kaggle Compute & Seed
 import os
 import sys
 import random
 import time
 import json
+import subprocess
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -78,6 +79,35 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
+
+# Tự động nhận diện môi trường Kaggle Compute khi kết nối từ VS Code
+IS_KAGGLE = os.path.exists("/kaggle") or "KAGGLE_KERNEL_RUN_TYPE" in os.environ
+
+if IS_KAGGLE:
+    print("🚀 Phát hiện môi trường Kaggle Compute với GPU!")
+    # 1. Cài đặt thư viện pyvi nếu kernel chưa có
+    try:
+        import pyvi
+    except ImportError:
+        print("Đang cài đặt thư viện pyvi trên Kaggle...")
+        subprocess.run([sys.executable, "-m", "pip", "install", "-q", "pyvi"], check=True)
+    
+    # 2. Đồng bộ mã nguồn và dữ liệu từ GitHub nếu chưa có trong thư mục hiện tại của Kaggle
+    if not os.path.exists("data") or not os.path.exists("src"):
+        print("Đang đồng bộ dữ liệu và mã nguồn từ GitHub uit_vsfc...")
+        repo_url = "https://github.com/khanhtrphuocbao/uit_vsfc.git"
+        temp_dir = "/tmp/uit_vsfc_repo"
+        if not os.path.exists(temp_dir):
+            subprocess.run(["git", "clone", "-b", "multi-paradigm_fused_ensemble", "--depth", "1", repo_url, temp_dir], check=False)
+        if os.path.exists(temp_dir):
+            import shutil
+            for folder in ["data", "src", "configs", "outputs"]:
+                src_folder = os.path.join(temp_dir, folder)
+                if os.path.exists(src_folder) and not os.path.exists(folder):
+                    shutil.copytree(src_folder, folder, dirs_exist_ok=True)
+                    print(f"Đã đồng bộ thư mục: {folder}")
+else:
+    print("💻 Đang chạy trên môi trường Local!")
 
 # Đảm bảo import trực tiếp các module từ src/
 sys.path.insert(0, os.path.abspath("."))
@@ -103,9 +133,9 @@ print(f"Thiết bị tính toán: {device}")
 if torch.cuda.is_available():
     print(f"GPU: {torch.cuda.get_device_name(0)} (VRAM: {torch.cuda.get_device_properties(0).total_memory / (1024**2):.0f} MB)")
 
-# CHẾ ĐỘ THỰC THI NHANH (FAST DEMO MODE):
-# Khi FAST_MODE = True, notebook sẽ chạy kiểm tra logic và pipeline nhanh trong vài giây.
-# Đồng thời nạp toàn bộ kết quả thực nghiệm đầy đủ (B0 -> B11) đã lưu trong outputs/ để trực quan hóa.
+# CHẾ ĐỘ THỰC THI (EXECUTION MODE):
+# FAST_MODE = True: Chạy demo kiểm thử logic & trực quan hóa artifacts trong vài giây.
+# FAST_MODE = False: Sẵn sàng huấn luyện mô hình sâu bằng GPU của Kaggle.
 FAST_MODE = True
 print(f"FAST_MODE: {FAST_MODE}")""")
 
