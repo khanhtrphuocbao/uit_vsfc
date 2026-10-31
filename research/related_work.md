@@ -32,7 +32,11 @@ Tài liệu này tổng hợp cơ sở lý thuyết, các công trình gốc, c�
 ### 1.3. Logit Adjustment và Balanced Softmax
 
 * **Logit Adjustment**: Menon et al. (ICLR 2021) [10] chứng minh về mặt lý thuyết rằng để tối ưu hóa Macro-F1 hoặc balanced error dưới phân phối đuôi dài (long-tail), mô hình cần dịch chuyển logit dự đoán theo phân phối tiên nghiệm của các lớp:
-  $$\hat{y} = \arg\max_y \left( f_y(x) - \tau \log \pi_y \right)$$
+
+  $$
+  \hat{y} = \operatorname*{arg\,max}_y \left( f_y(x) - \tau \log \pi_y \right)
+  $$
+
   trong đó $\pi_y$ là xác suất tiên nghiệm của lớp $y$ trong tập huấn luyện, và $\tau > 0$ là nhiệt độ điều chỉnh.
   - *Post-hoc Logit Adjustment*: Áp dụng sau khi huấn luyện mô hình chuẩn bằng Cross-Entropy mà không làm biến dạng biểu diễn biểu đạt.
   - *Loss-level Logit Adjustment*: Đưa độ lệch tiên nghiệm trực tiếp vào hàm Softmax khi tính loss trong quá trình huấn luyện.
@@ -44,7 +48,7 @@ Tài liệu này tổng hợp cơ sở lý thuyết, các công trình gốc, c�
 ### 1.4. Contrastive Learning, Hard Negative Mining và Class-Aware Sampling
 
 * **Supervised Contrastive Learning (SupCon)**: Khosla et al. (NeurIPS 2020) [12] mở rộng SimCLR [13] sang bài toán có giám sát, kéo các biểu diễn cùng nhãn lại gần nhau và đẩy các biểu diễn khác nhãn ra xa nhau trên mặt cầu đơn vị.
-* **Batch-Hard Triplet Loss**: Hermans et al. (2017) [14] trong bài toán re-identification chứng minh rằng việc khai thác mẫu âm khó nhất (hardest negative: $q = \arg\max_{k \notin y_i} s(h_i, h_k)$) và mẫu dương khó nhất (hardest positive: $p = \arg\min_{j \in y_i} s(h_i, h_j)$) trong mini-batch mang lại khả năng phân định ranh giới (margin) chặt chẽ hơn nhiều so với việc lấy mẫu ngẫu nhiên.
+* **Batch-Hard Triplet Loss**: Hermans et al. (2017) [14] trong bài toán re-identification chứng minh rằng việc khai thác mẫu âm khó nhất (hardest negative: $q = \operatorname*{arg\,max}_{k \notin y_i} s(h_i, h_k)$) và mẫu dương khó nhất (hardest positive: $p = \operatorname*{arg\,min}_{j \in y_i} s(h_i, h_j)$) trong mini-batch mang lại khả năng phân định ranh giới (margin) chặt chẽ hơn nhiều so với việc lấy mẫu ngẫu nhiên.
 * **Ranh giới lớp Neutral (Neutral Boundary)**: Khác với Positive và Negative (vốn nằm ở hai cực cảm xúc đối lập), Neutral nằm ở "vùng đệm" (boundary zone) giữa hai thái cực. Do đó, một câu Neutral dễ bị nhầm lẫn nhất với những câu Negative hoặc Positive có sắc thái nhẹ hoặc ngữ nghĩa gần gũi.
 * **Class-Aware Batch Sampling**: Shen et al. (2016) [15] và Kang et al. (ICLR 2020) [16] chỉ ra rằng trong phân loại đuôi dài, mini-batch ngẫu nhiên sẽ chứa rất ít (hoặc không có) mẫu thiểu số. Với batch size 32 trên UIT-VSFC, xác suất một batch không có mẫu Neutral nào lên tới $(1 - 0.0401)^{32} \approx 27,1\%$, và xác suất chỉ có đúng 1 mẫu Neutral là $\approx 36,2\%$. Trong cả hai trường hợp này, các hàm Contrastive/Triplet loss đều vô hiệu vì không thể tạo thành cặp dương $(h_i, h_{p_i})$. Do đó, Class-aware sampler là điều kiện tiên quyết để contrastive loss hoạt động ổn định.
 
@@ -85,8 +89,8 @@ Tài liệu này tổng hợp cơ sở lý thuyết, các công trình gốc, c�
 - Kỹ thuật Post-hoc Logit / Bias Adjustment dựa trên tập Validation (Menon et al., 2021; Provost, 2000).
 
 ### 3.3. Giả thuyết đóng góp riêng (Research Hypothesis of NBAC-PhoBERT)
-- **Giả thuyết 1 (Feature Space Boundary Separation)**: Thay vì áp dụng contrastive loss đối xứng cho mọi lớp, việc thiết kế một loss định hướng ranh giới chuyên biệt cho Neutral (**Neutral Boundary Loss** $\mathcal{L}_{NB}$) — buộc mỗi anchor Neutral phải cách xa mẫu phân cực khó nhất (hardest negative $q_i \in \{Neg, Pos\}$) một khoảng margin $m$ lớn hơn khoảng cách tới mẫu Neutral khác ($p_i$) — sẽ giúp không gian tiềm ẩn tạo ra một ranh giới bảo vệ rõ ràng xung quanh vùng Neutral.
-- **Giả thuyết 2 (Decoupled Representation & Decision Adjustment)**: Kết hợp $\mathcal{L}_{NB}$ (để tạo feature representation tách biệt) với tinh chỉnh bias Neutral $b_N$ trên Validation (để cân bằng Precision-Recall trade-off) sẽ vượt trội hơn việc chỉ dùng weighted Cross-Entropy hoặc chỉ dùng post-hoc logit adjustment trên mô hình baseline.
+- **Giả thuyết 1 (Feature Space Boundary Separation)**: Thay vì áp dụng contrastive loss đối xứng cho mọi lớp, việc thiết kế một loss định hướng ranh giới chuyên biệt cho Neutral (**Neutral Boundary Loss** $\mathcal{L}_{\text{NB}}$) — buộc mỗi anchor Neutral phải cách xa mẫu phân cực khó nhất (hardest negative $q_i \in \{\text{Neg}, \text{Pos}\}$) một khoảng margin $m$ lớn hơn khoảng cách tới mẫu Neutral khác ($p_i$) — sẽ giúp không gian tiềm ẩn tạo ra một ranh giới bảo vệ rõ ràng xung quanh vùng Neutral.
+- **Giả thuyết 2 (Decoupled Representation & Decision Adjustment)**: Kết hợp $\mathcal{L}_{\text{NB}}$ (để tạo feature representation tách biệt) với tinh chỉnh bias Neutral $b_N$ trên Validation (để cân bằng Precision-Recall trade-off) sẽ vượt trội hơn việc chỉ dùng weighted Cross-Entropy hoặc chỉ dùng post-hoc logit adjustment trên mô hình baseline.
 - **Tính khoa học trung thực**: Đây là giả thuyết nghiên cứu cần được kiểm chứng thực nghiệm có đối chứng (Ablation B4, B5, B6, B7), không mặc định là phương pháp đề xuất sẽ vượt trội trước khi có dữ liệu thực tế.
 
 ---

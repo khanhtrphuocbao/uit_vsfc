@@ -11,6 +11,9 @@
 \usepackage{xcolor}
 \usepackage{cite}
 
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+
 \hypersetup{
     colorlinks=true,
     linkcolor=blue!70!black,
@@ -84,16 +87,16 @@ Với tỷ lệ 4,01\% lớp Neutral, một mini-batch ngẫu nhiên kích thư�
 \subsection{Hàm Mất Mát NBAC Đề Xuất Ban Đầu}
 Hàm mất mát NBAC tập trung lực ép biên độ vào anchor Neutral: mỗi biểu diễn của Neutral phải nằm gần biểu diễn Neutral khác ít nhất một biên độ $m$ so với mẫu phân cực gần nhất trong batch:
 \begin{equation}
-\mathcal{L}_{NB} = \frac{1}{|\mathcal{N}|} \sum_{i \in \mathcal{N}} \max\left(0,\, m - s(h_i, h_{p_i}) + s(h_i, h_{q_i})\right)
+\mathcal{L}_{\text{NB}} = \frac{1}{|\mathcal{N}|} \sum_{i \in \mathcal{N}} \max\left(0,\, m - s(h_i, h_{p_i}) + s(h_i, h_{q_i})\right)
 \end{equation}
-trong đó $s(a, b) = a^\top b$ là cosine similarity trên vector chuẩn hóa $L_2$, $p_i = \arg\min_{j \in \mathcal{N}, j \neq i} s(h_i, h_j)$ (hardest positive), và $q_i = \arg\max_{k \notin \mathcal{N}} s(h_i, h_k)$ (hardest negative).
+trong đó $s(a, b) = a^\top b$ là cosine similarity trên vector chuẩn hóa $L_2$, $p_i = \argmin_{j \in \mathcal{N}, j \neq i} s(h_i, h_j)$ (hardest positive), và $q_i = \argmax_{k \notin \mathcal{N}} s(h_i, h_k)$ (hardest negative).
 
 \subsection{Balanced Softmax và Weighted-SupCon}
 Để giải quyết triệt để sự mất cân bằng mà không làm méo mó biểu diễn không gian, hai kiến trúc nâng cao được phát triển:
 \begin{enumerate}
     \item \textbf{Smoothed Balanced-SupCon (B8)}: Kết hợp Supervised Contrastive Loss toàn cục với Balanced Softmax có hệ số làm mịn $\gamma = 0.5$:
     \begin{equation}
-    \mathcal{L}_{BS} = -\log \left( \frac{e^{z_y + 0.5 \log n_y}}{\sum_{c=1}^C e^{z_c + 0.5 \log n_c}} \right)
+    \mathcal{L}_{\text{BS}} = -\log \left( \frac{e^{z_y + 0.5 \log n_y}}{\sum_{c=1}^C e^{z_c + 0.5 \log n_c}} \right)
     \end{equation}
     \item \textbf{Weighted-SupCon (B9)}: Tích hợp trực tiếp Cost-Sensitive Loss của B2 và Metric Learning của B5 trong một kiến trúc đa nhiệm thống nhất:
     \begin{equation}
@@ -104,7 +107,7 @@ trong đó $s(a, b) = a^\top b$ là cosine similarity trên vector chuẩn hóa 
 \subsection{Mô hình Đột Phá: Multi-Paradigm Fused Ensemble (B11)}
 Mô hình B11 thực hiện dung hợp xác suất dự đoán (Logit Fusion) của 4 trường phái biểu diễn độc lập:
 \begin{equation}
-\hat{y} = \arg\max_c \left[ \frac{1}{4} \left( z_c^{(B2)} + z_c^{(B5)} + z_c^{(B8)} + z_c^{(B9)} \right) \right]
+\hat{y} = \argmax_c \left[ \frac{1}{4} \left( z_c^{(B2)} + z_c^{(B5)} + z_c^{(B8)} + z_c^{(B9)} \right) \right]
 \end{equation}
 Cơ chế này dung hòa đồng thời: khả năng kéo Recall mạnh mẽ của B2, cấu trúc hình học ổn định của B5, khả năng triệt tiêu độ lệch tiên nghiệm của B8 và sự điều hòa liên hợp của B9, tạo ra một ranh giới quyết định cân bằng và vững chắc tối đa.
 

@@ -201,7 +201,10 @@ Khác với tiếng Anh (nơi khoảng trắng phân định ranh giới từ), 
 * Nếu nạp trực tiếp câu chưa tách từ vào mô hình ngôn ngữ BPE (Byte-Pair Encoding), mô hình sẽ tách rời thành *"giảng"*, *"viên"* làm phân mảnh đặc trưng ngữ nghĩa.
 
 Dự án áp dụng **PyVi (ViTokenizer)** để chuẩn hóa văn bản trước khi đưa vào PhoBERT:
-$$\text{"giảng viên dạy nhiệt tình"} \xrightarrow{\text{PyVi}} \text{"giảng_viên dạy nhiệt_tình"}$$""")
+
+$$
+\text{giảng viên dạy nhiệt tình} \;\xrightarrow{\quad\text{PyVi}\quad}\; \text{giảng\_viên dạy nhiệt\_tình}
+$$""")
 
     # CELL 6: Code on Tokenizer demo
     add_code(r"""# Demo tách từ với PyVi và Tokenizer PhoBERT
@@ -305,8 +308,44 @@ print("   - src.trainer:     run_training_experiment, evaluate_model")
 print("   - src.calibration: search_optimal_neutral_bias, apply_neutral_bias")
 print("   - src.metrics:     compute_all_metrics, compute_paired_bootstrap_ci")""")
 
-    # CELL 10: Numerical Stability Test
-    add_code(r"""# 5.1. Kiểm tra tính toàn vẹn số học & Xử lý Edge Cases của NBAC Loss
+    # CELL 10: Theoretical Foundation & Loss Formulations
+    add_md(r"""### 5.1. Cơ Sở Lý Thuyết & Công Thức Toán Học Các Trường Phái (Mathematical Formulations)
+
+Dự án nghiên cứu và đối chứng 4 trường phái toán học chính để giải quyết bài toán mất cân bằng lớp Neutral:
+
+1. **Trường phái 1 — Cost-Sensitive Learning (Mô hình B2)**:
+   Gán trọng số nghịch đảo tần suất cho hàm mất mát Cross-Entropy nhằm phạt nặng hơn các sai số trên lớp thiểu số:
+   $$
+   \mathcal{L}_{\text{WCE}} = - \sum_{c=0}^2 w_c \cdot y_c \log \hat{y}_c, \quad w_c = \frac{N}{C \cdot N_c}
+   $$
+
+2. **Trường phái 2 — Neutral-Boundary-Aware Contrastive Loss (Mô hình B6, B7)**:
+   Buộc biểu diễn của anchor Neutral phải duy trì khoảng cách an toàn $m$ so với các hard negatives phân cực gần nhất trong batch:
+   $$
+   \mathcal{L}_{\text{NB}} = \frac{1}{|\mathcal{N}|} \sum_{i \in \mathcal{N}} \max\left(0, m - s(h_i, h_{p_i}) + s(h_i, h_{q_i})\right)
+   $$
+   trong đó $s(a, b) = a^\top b$ là cosine similarity trên vector chuẩn hóa $L_2$, $p_i = \operatorname*{arg\,min}_{j \in \mathcal{N}, j \neq i} s(h_i, h_j)$ (hardest positive neutral), và $q_i = \operatorname*{arg\,max}_{k \notin \mathcal{N}} s(h_i, h_k)$ (hardest negative thuộc lớp Negative hoặc Positive).
+
+3. **Trường phái 3 — Representation Metric Learning (Mô hình B5, B9)**:
+   Sử dụng Supervised Contrastive Loss (Khosla et al., 2020) để gom cụm các mẫu cùng lớp trên siêu cầu đơn vị:
+   $$
+   \mathcal{L}_{\text{SupCon}} = \sum_{i} \frac{-1}{|P(i)|} \sum_{p \in P(i)} \log \frac{\exp(h_i \cdot h_p / \tau)}{\sum_{a \neq i} \exp(h_i \cdot h_a / \tau)}
+   $$
+
+4. **Trường phái 4 — Prior-Adjustment / Balanced Softmax (Mô hình B8)**:
+   Dịch chuyển logit trong quá trình tối ưu hóa theo xác suất tiên nghiệm để triệt tiêu thiên kiến lớp đa số:
+   $$
+   \mathcal{L}_{\text{BS}} = -\log \frac{\exp\left(z_y + \gamma \log n_y\right)}{\sum_c \exp\left(z_c + \gamma \log n_c\right)}
+   $$
+
+5. **Mô hình Dung Hợp SOTA — Multi-Paradigm Fused Ensemble (B11)**:
+   Dung hợp logit từ 4 mô hình đại diện độc lập (Cost-Sensitive B2 + Metric SupCon B5 + Balanced Softmax B8 + Unified Weighted-SupCon B9):
+   $$
+   \hat{y} = \operatorname*{arg\,max}_c \left[ \frac{1}{4} \left( z_c^{(B2)} + z_c^{(B5)} + z_c^{(B8)} + z_c^{(B9)} \right) \right]
+   $$""")
+
+    # CELL 11: Numerical Stability Test
+    add_code(r"""# 5.2. Kiểm tra tính toàn vẹn số học & Xử lý Edge Cases của NBAC Loss
 nbac_loss_fn = NeutralBoundaryLoss(margin=0.2, neutral_label=1)
 
 dummy_embeddings = torch.randn(8, 128, requires_grad=True)
@@ -656,13 +695,13 @@ if os.path.exists(pred_b1_file) and os.path.exists(pred_b11_file):
 
 Khảo sát các ca nhầm lẫn thực tế của lớp Neutral trên UIT-VSFC Test set:
 
-1. **Nhầm lẫn Neutral thành Negative (False Negative Neutral $\rightarrow$ Predicted Negative)**:
+1. **Nhầm lẫn Neutral thành Negative (False Negative Neutral → Predicted Negative)**:
    - **Văn bản**: *"thầy dạy bình thường, slide hơi nhiều chữ"* (True: Neutral, Pred: Negative).
    - **Bản chất**: Cụm từ "hơi nhiều chữ" mang sắc thái phàn nàn nhẹ nhưng tổng thể câu nhận xét chỉ là đánh giá khách quan về công cụ trình chiếu. Các mô hình đơn lẻ bị bias tiêu cực bởi cụm từ này, trong khi B11 Ensemble dung hòa được xác suất.
-2. **Nhầm lẫn Neutral thành Positive (False Negative Neutral $\rightarrow$ Predicted Positive)**:
+2. **Nhầm lẫn Neutral thành Positive (False Negative Neutral → Predicted Positive)**:
    - **Văn bản**: *"giảng viên giảng dạy đầy đủ nội dung theo đề cương"* (True: Neutral, Pred: Positive).
    - **Bản chất**: Từ "đầy đủ nội dung" có tần suất đồng xuất hiện rất cao trong các đánh giá khen ngợi (Positive). Đây là các hard boundary negatives điển hình.
-3. **Mẫu Negative bị gán nhầm thành Neutral (False Positive Neutral $\leftarrow$ True Negative)**:
+3. **Mẫu Negative bị gán nhầm thành Neutral (False Positive Neutral ← True Negative)**:
    - **Văn bản**: *"thầy ít khi trả lời email thắc mắc của sinh viên"* (True: Negative, Pred: Neutral).
    - **Bản chất**: Câu văn trần thuật khách quan, không chứa từ cảm thán biểu cảm tiêu cực rõ rệt ("tệ", "chán", "kém"), khiến các mô hình bị đánh lừa là câu trung lập.
 4. **Tại sao Fused Ensemble B11 thành công?**:
@@ -678,7 +717,11 @@ Khảo sát các ca nhầm lẫn thực tế của lớp Neutral trên UIT-VSFC 
   NBAC Loss (B6) đạt Neutral F1 = **0.5695** (tăng từ 74 lên 86 mẫu Neutral đoán đúng), nhưng mức cải thiện tổng thể Macro-F1 ($\Delta = +0.0040$) chưa đạt ý nghĩa thống kê ($p = 0.337$) do hiện tượng nhiễu nhãn ở ranh giới.
 * **Câu hỏi 3: Giải pháp nào đạt hiệu năng tối ưu nhất trên UIT-VSFC?**
   Mô hình **Multi-Paradigm Fused Ensemble (B11)** kết hợp B2 + B5 + B8 + B9 đạt SOTA toàn diện:
-  $$\text{Macro-F1} = \mathbf{0.8433}, \quad \text{Neutral F1} = \mathbf{0.6143}, \quad \text{Accuracy} = \mathbf{0.9419}$$
+
+  $$
+  \text{Macro-F1} = \mathbf{0.8433}, \quad \text{Neutral-F1} = \mathbf{0.6143}, \quad \text{Accuracy} = \mathbf{0.9419}
+  $$
+
   với kiểm định thống kê tin cậy cao ($p = 0.010 < 0.05$).
 
 ### 2. Đóng Góp Học Thuật & Đạo Đức Nghiên Cứu

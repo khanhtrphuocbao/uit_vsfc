@@ -75,7 +75,11 @@ Supervised Contrastive Learning (SupCon - Khosla et al., NeurIPS 2020) [12] mở
 
 ### 2.4. Logit Adjustment và Balanced Softmax
 Menon et al. (ICLR 2021) [10] và Ren et al. (NeurIPS 2020) [11] chứng minh về mặt toán học rằng để tối ưu hóa Macro-F1 dưới phân phối đuôi dài, mô hình cần triệt tiêu độ lệch tiên nghiệm bằng cách dịch chuyển logit:
-$$\mathcal{L}_{BS} = -\log \left( \frac{n_y^\gamma e^{z_y}}{\sum_{c=1}^C n_c^\gamma e^{z_c}} \right)$$
+
+$$
+\mathcal{L}_{\text{BS}} = -\log \left( \frac{n_y^\gamma e^{z_y}}{\sum_{c=1}^C n_c^\gamma e^{z_c}} \right)
+$$
+
 Ở pha suy diễn, mô hình sử dụng logit thô $z_c(x)$ mà không cộng thêm log-prior, cho phép phân loại theo đúng xác suất có điều kiện cân bằng $P(X \mid Y)$ mà không bị lấn át bởi xác suất tiên nghiệm $P(Y)$.
 
 ### 2.5. Bảng So Sánh Các Công Trình Tiền Lệ
@@ -145,19 +149,34 @@ Chúng tôi thiết kế [`ClassAwareBatchSampler`](file:///home/lavender/uit/ad
 
 ### 3.3. Phương pháp đề xuất ban đầu: Neutral-Boundary-Aware Contrastive Loss (NBAC)
 Ý tưởng của NBAC là chỉ tập trung toàn bộ lực ép ranh giới vào anchor Neutral: buộc mỗi mẫu Neutral phải nằm gần mẫu Neutral bất kỳ hơn ít nhất một biên độ $m$ so với mẫu phân cực gần nhất trong batch:
-$$\mathcal{L}_{NB} = \frac{1}{|\mathcal{N}|} \sum_{i \in \mathcal{N}} \max\left(0,\, m - s(h_i, h_{p_i}) + s(h_i, h_{q_i})\right)$$
-trong đó $s(a,b) = a^\top b$ là cosine similarity trên vector đã chuẩn hóa L2, $p_i = \arg\min_{j \in \mathcal{N}, j \neq i} s(h_i, h_j)$ (hardest positive), và $q_i = \arg\max_{k \notin \mathcal{N}} s(h_i, h_k)$ (hardest negative).
+
+$$
+\mathcal{L}_{\text{NB}} = \frac{1}{|\mathcal{N}|} \sum_{i \in \mathcal{N}} \max\left(0,\, m - s(h_i, h_{p_i}) + s(h_i, h_{q_i})\right)
+$$
+
+trong đó $s(a,b) = a^\top b$ là cosine similarity trên vector đã chuẩn hóa L2, $p_i = \operatorname*{arg\,min}_{j \in \mathcal{N}, j \neq i} s(h_i, h_j)$ (hardest positive), và $q_i = \operatorname*{arg\,max}_{k \notin \mathcal{N}} s(h_i, h_k)$ (hardest negative).
 
 ### 3.4. Phương pháp cải tiến: Balanced Softmax và Weighted-SupCon
 Để khắc phục điểm yếu của việc tối ưu một phía của NBAC, chúng tôi phát triển hai kiến trúc nâng cao:
 1. **Smoothed Balanced-SupCon (B8)**: Thay thế CE bằng Balanced Softmax với số mũ làm mịn $\gamma = 0.5$, kết hợp cùng SupCon đối xứng toàn cục:
-   $$\mathcal{L}_{BS} = -\log \left( \frac{e^{z_y + 0.5 \log n_y}}{\sum_{c=1}^C e^{z_c + 0.5 \log n_c}} \right)$$
+
+   $$
+   \mathcal{L}_{\text{BS}} = -\log \left( \frac{e^{z_y + 0.5 \log n_y}}{\sum_{c=1}^C e^{z_c + 0.5 \log n_c}} \right)
+   $$
+
 2. **Weighted-SupCon (B9)**: Tích hợp trực tiếp Cost-Sensitive Loss của B2 và Supervised Contrastive Loss của B5 vào cùng một hàm mục tiêu:
-   $$\mathcal{L}_{Total} = \mathcal{L}_{\text{Weighted-CE}} + \lambda \mathcal{L}_{\text{SupCon}}$$
+
+   $$
+   \mathcal{L}_{\text{Total}} = \mathcal{L}_{\text{Weighted-CE}} + \lambda \mathcal{L}_{\text{SupCon}}
+   $$
 
 ### 3.5. Mô hình Dung Hợp Đa Cơ Chế (Multi-Paradigm Fused Ensemble — B11)
 B11 là mô hình dung hợp logit (Logit Fusion) kết hợp 4 trường phái biểu diễn độc lập:
-$$\hat{y} = \arg\max_c \left[ \frac{1}{4} \left( z_c^{(B2)} + z_c^{(B5)} + z_c^{(B8)} + z_c^{(B9)} \right) \right]$$
+
+$$
+\hat{y} = \operatorname*{arg\,max}_c \left[ \frac{1}{4} \left( z_c^{(B2)} + z_c^{(B5)} + z_c^{(B8)} + z_c^{(B9)} \right) \right]
+$$
+
 Sự kết hợp này triệt tiêu phương sai dự đoán của từng mô hình đơn lẻ và phát huy đồng thời: (1) sức mạnh kéo Recall của B2, (2) sức mạnh gom cụm hình học của B5, (3) khả năng hiệu chỉnh tiên nghiệm của B8, và (4) khả năng điều hòa liên hợp của B9.
 
 ---
@@ -223,7 +242,7 @@ Dưới đây là bảng số liệu đo đạc chính thức trên tập Test c
 #### 4. Phân tích thực tế phương pháp đề xuất NBAC (B6 vs B5)
 - **B5 (Supervised Contrastive Loss)** đạt Macro-F1 = **0,8353**, Neutral F1 = **0,5944** và Accuracy cao nhất trong các mô hình đơn (**0,9394**), chỉ có **34 False Positives**. SupCon kéo gom toàn bộ các cặp cùng lớp một cách đối xứng, gián tiếp mở rộng khoảng cách giữa cả 3 lớp.
 - **B6 (Neutral Boundary Loss)** đạt Macro-F1 = **0,8251** và Neutral F1 = **0,5695** (sau khi hiệu chỉnh logit ở B7 đạt **0,8286** và **0,5796**). 
-- *Đánh giá khoa học trung thực*: NBAC có cơ sở toán học hợp lý nhưng việc chỉ khai thác duy nhất một mẫu hardest negative phân cực ($q_i = \arg\max s(h_i, h_k)$) rất dễ bốc trúng các câu phản hồi sinh viên có nhãn nhập nhằng (ambiguous labels), dẫn đến gradient bị dao động nhẹ quanh ranh giới. Do đó, NBAC đơn lẻ chưa thể vượt qua SupCon toàn cục.
+- *Đánh giá khoa học trung thực*: NBAC có cơ sở toán học hợp lý nhưng việc chỉ khai thác duy nhất một mẫu hardest negative phân cực ($q_i = \operatorname*{arg\,max}_k s(h_i, h_k)$) rất dễ bốc trúng các câu phản hồi sinh viên có nhãn nhập nhằng (ambiguous labels), dẫn đến gradient bị dao động nhẹ quanh ranh giới. Do đó, NBAC đơn lẻ chưa thể vượt qua SupCon toàn cục.
 
 #### 5. Đột phá SOTA của Multi-Paradigm Fused Ensemble (B11)
 - Khi kết hợp xác suất dự đoán (logit fusion) từ 4 trường phái độc lập (**B2** Cost-Sensitive + **B5** Metric Clustering + **B8** Smoothed Prior + **B9** Unified Weighted-SupCon):
